@@ -1,107 +1,89 @@
+require('./mongoose')
 const express = require('express')
-const { ObjectID } = require('mongodb')
 const router = express.Router()
-const connection = require('./connection')
+const User = require('./User')
 
-/**
- * Get User method
- */
 router.get('/users', async (req, res) => {
     try {
-        if (connection.connect()) {
-            const db = connection.db('db_latihan')
-            const users = await db.collection('users').find().toArray()
+        const user = await User.find()
 
-            res.send({ data: users })
+        res.send({ data: user })
+    } catch (error) {
+        res.send({ message: error.message || 'internal server error' })
+    }
+})
+
+router.get('/users/:id', async (req, res) => {
+    try {
+        const { id } = req.params
+        const user = await User.findOne({ _id: id })
+
+        if (user) {
+            res.send({
+                data: user
+            })
         } else {
-            res.send({ message: 'connection database failed' })
+            res.send({ message: 'User not found' })
         }
     } catch (error) {
         res.send({ message: error.message || 'internal server error' })
     }
 })
 
-/**
- * Add User method
- */
 router.post('/users', async (req, res) => {
     try {
-        if (connection.connect()) {
-            const { name, age, status } = req.body
-            const db = connection.db('db_latihan')
+        const { name, age, status } = req.body
+        const user = await User.create({
+            name,
+            age,
+            status
+        })
 
-            const user = await db.collection('users').insertOne({
-                name,
-                age,
-                status
-            })
+        res.send({
+            data: user
+        })
 
-            if (user.insertedId) {
-                res.send({ message: 'successfuly add data' })
-            } else {
-                res.send({ message: 'failed to add data' })
-            }
-
-        } else {
-            res.send({ message: 'connection database failed' })
-        }
     } catch (error) {
         res.send({ message: error.message || 'internal server error' })
     }
 })
 
-
-/**
- * Updated User method
- */
 router.put('/users/:id', async (req, res) => {
     try {
-        if (connection.connect()) {
-            const { id } = req.params
-            const { name, age, status } = req.body
-            const db = connection.db('db_latihan')
+        const { id } = req.params
+        const { name, age, status } = req.body
+        const user = await User.updateOne({ _id: id }, {
+            name,
+            age,
+            status
+        }, { runValidators: true })
 
-            const user = await db.collection('users').updateOne({ _id: ObjectID(id) }, {
-                $set: {
-                    name,
-                    age,
-                    status
-                }
+        if (user) {
+            res.send({
+                data: user
             })
-
-            if (user.modifiedCount === 1) {
-                res.send({ message: 'successfuly updated data' })
-            } else {
-                res.send({ message: 'failed updated data' })
-            }
         } else {
-            res.send({ message: 'connection database failed' })
+            res.send({ message: 'User not found' })
         }
+
     } catch (error) {
         res.send({ message: error.message || 'internal server error' })
     }
 })
 
-
-/**
- * Delete User method
- */
 router.delete('/users/:id', async (req, res) => {
     try {
-        if (connection.connect()) {
-            const { id } = req.params
-            const db = connection.db('db_latihan')
+        const { id } = req.params
+        const user = await User.deleteOne({ _id: id })
 
-            const user = await db.collection('users').deleteOne({ _id: ObjectID(id) })
-
-            if (user.deletedCount === 1) {
-                res.send({ message: 'successfuly deleted data' })
-            } else {
-                res.send({ message: 'failed deleted data' })
-            }
+        if (user) {
+            res.send({
+                data: user
+            })
         } else {
-            res.send({ message: 'connection database failed' })
+            res.send({ message: 'User not found' })
         }
+
     } catch (error) {
         res.send({ message: error.message || 'internal server error' })
     }
